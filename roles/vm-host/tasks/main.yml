@@ -1,0 +1,32 @@
+- name: Install VM host stuff using apt
+  apt:
+          name: "{{ stuff }}"
+          state: latest
+  vars:
+          stuff:
+                  - xen-system
+                  - xen-tools
+
+- name: Find smallest LVM VG on this system (for VM storage)
+  set_fact: smallest_vg={{ ansible_lvm['vgs'] | sort('size_g' | int, True) | last }}
+  #This may be buggy, it's mostly untested. We reverse the sort (because it sorts ascending by default), and get the last.
+  #Why don't we simply sort ascending and get the first? Because in a tie, '7200' (spindle speed) sorts prior to 'tlc' (solid state storage),
+  #and we want to store VM disks on SSDs... yeah.
+
+- name: Show what VG we found
+  debug: var=smallest_vg
+
+- name: Configure xen-tools
+  blockinfile: |
+          dest=/etc/xen-tools/xen-tools.conf
+          content="lvm = {{smallest_vg}}
+          genpass = 1
+          genpass_len = 64
+          pygrub = 1
+          nohosts = 1"
+
+- name: Configure LVM to send discards
+  lineinfile:
+          dest=/etc/lvm/lvm.conf
+          line="\tissue_discards = 1"
+          regexp="issue_discards = "
