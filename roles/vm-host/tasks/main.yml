@@ -8,18 +8,27 @@
                   - xen-tools
 
 - name: Find smallest LVM VG on this system (for VM storage)
-  set_fact: smallest_vg={{ ansible_lvm['vgs'] | sort('size_g' | int, True) | last }}
+  set_fact: vm_storage_vg={{ ansible_lvm['vgs'] | sort('size_g' | int, True) | last }}
   #This may be buggy, it's mostly untested. We reverse the sort (because it sorts ascending by default), and get the last.
   #Why don't we simply sort ascending and get the first? Because in a tie, '7200' (spindle speed) sorts prior to 'tlc' (solid state storage),
   #and we want to store VM disks on SSDs... yeah.
 
-- name: Show what VG we found
-  debug: var=smallest_vg
+#If you want to use thin pools, you MIGHT be able to use this instead. (totally untested)
+#- name: Find smallest thin-provisioning pool on this system
+#  shell: "lvs --sort -lv_size -o lv_full_name --noheadings /dev/mapper/*pool | tail -n 1 | xargs"
+#  register: lvs_output
+
+- name: Set fact with the name of the thin pool we will use
+  set_fact:
+          vm_storage_vg: "{{ lvs_output.stdout }}"
+
+- name: Show what VG we are about to use for VM storage
+  debug: var=vm_storage_vg
 
 - name: Configure xen-tools
   blockinfile: |
           dest=/etc/xen-tools/xen-tools.conf
-          content="lvm = {{smallest_vg}}
+          content="lvm = {{vm_storage_vg}}
           genpass = 1
           genpass_len = 64
           pygrub = 1
