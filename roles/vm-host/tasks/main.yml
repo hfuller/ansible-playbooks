@@ -18,9 +18,9 @@
 #  shell: "lvs --sort -lv_size -o lv_full_name --noheadings /dev/mapper/*pool | tail -n 1 | xargs"
 #  register: lvs_output
 
-- name: Set fact with the name of the thin pool we will use
-  set_fact:
-          vm_storage_vg: "{{ lvs_output.stdout }}"
+#- name: Set fact with the name of the thin pool we will use
+#set_fact:
+#          vm_storage_vg: "{{ lvs_output.stdout }}"
 
 - name: Show what VG we are about to use for VM storage
   debug: var=vm_storage_vg
@@ -39,3 +39,9 @@
           dest=/etc/lvm/lvm.conf
           line="\tissue_discards = 1"
           regexp="issue_discards = "
+
+- name: Configure LVM to replace failed mirrors automatically
+  lineinfile:
+          dest=/etc/lvm/lvm.conf
+          line="\traid_fault_policy = \"replace\""
+          regexp="raid_fault_policy = "
