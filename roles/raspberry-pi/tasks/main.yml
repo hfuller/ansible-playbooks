@@ -1,0 +1,11 @@
+- name: Delete the pi user
+  user: name=pi state=absent remove=yes force=yes
+
+- name: Set time zone
+  timezone: name="America/Chicago"
+
+- name: Disable GB locale
+  locale_gen: name="en_GB.UTF-8" state=absent
+
+- name: Enable US locale
+  locale_gen: name="en_US.UTF-8" state=present

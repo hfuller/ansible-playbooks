@@ -7,3 +7,8 @@
   sudo: yes
   roles:
           - vm-host
+
+- hosts: raspberry-pi
+  sudo: yes
+  roles:
+          - raspberry-pi
