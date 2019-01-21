@@ -1,0 +1,28 @@
+- name: install basics using apt
+  apt: name={{item}}
+  with_items:
+    - openssh-server
+    - openssh-client
+    - git
+    - vim
+    - psmisc
+    - screen
+
+- name: uninstall nano using apt
+  apt: name=nano state=absent
+
+- name: add hfuller user
+  user: name=hfuller append=yes groups=sudo shell=/bin/bash
+
+- name: retrieve hfuller's authorized_keys
+  get_url: url=https://git.acedb.co/hfuller.keys dest=/tmp
+
+- name: install hfuller's authorized_keys
+  authorized_key:
+    user: hfuller
+    key: "{{ lookup('file', '/tmp/hfuller.keys') }}"
+    manage_dir: yes
+
+- name: Sudoers can change anyone's password without providing their password
+  lineinfile: "dest=/etc/sudoers line='%sudo ALL=(ALL:ALL) NOPASSWD: /usr/bin/passwd'"
+
